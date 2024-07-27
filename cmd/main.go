@@ -44,6 +44,7 @@ func main() {
 	secrets := getGlobalValue("secrets")
 	orgs := getGlobalValue("orgs")
 	repos := getGlobalValue("repos")
+	dryRun := toBool(getGlobalValue("dry_run"))
 
 	if giteaServer == "" || giteaToken == "" {
 		slog.Error("missing gitea server or token")
@@ -57,6 +58,9 @@ func main() {
 	}
 
 	slog.Info("gitea server", "value", giteaServer)
+	if dryRun {
+		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
+	}
 
 	// init gitea client
 	ctx := withContextFunc(context.Background(), func() {})
@@ -81,6 +85,10 @@ func main() {
 			continue
 		}
 		for k, v := range allsecrets {
+			if dryRun {
+				slog.Info("update org secrets", "org", org, "secret", k)
+				continue
+			}
 			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
 				Name: k,
 				Data: v,
@@ -106,6 +114,10 @@ func main() {
 			continue
 		}
 		for k, v := range allsecrets {
+			if dryRun {
+				slog.Info("update repo secrets", "repo", repo, "secret", k)
+				continue
+			}
 			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
 				Name: k,
 				Data: v,

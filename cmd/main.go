@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	gsdk "code.gitea.io/sdk/gitea"
 	"github.com/joho/godotenv"
 )
 
@@ -66,6 +67,8 @@ func main() {
 	giteaToken := getGlobalValue("gitea_token")
 	giteaSkip := getGlobalValue("gitea_skip_verify")
 	secrets := getGlobalValue("secrets")
+	orgs := getGlobalValue("orgs")
+	repos := getGlobalValue("repos")
 
 	if giteaServer == "" || giteaToken == "" {
 		slog.Error("missing gitea server or token")
@@ -94,5 +97,43 @@ func main() {
 	if err != nil {
 		slog.Error("failed to init gitea client", "error", err)
 		return
+	}
+
+	// update gitea org secrets
+	orgsList := strings.Split(orgs, ",")
+	for _, org := range orgsList {
+		for k, v := range allsecrets {
+			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
+				Name: k,
+				Data: v,
+			})
+			if err != nil {
+				slog.Error("failed to update org secrets", "org", org, "error", err)
+				break
+			}
+			slog.Info("update org secrets", "org", org, "secret", k)
+		}
+	}
+
+	// update gitea repo secrets
+	reposList := strings.Split(repos, ",")
+	for _, repo := range reposList {
+		// check if the repo is in the format "org/repo"
+		val := strings.Split(repo, "/")
+		if len(val) != 2 {
+			slog.Error("invalid repo format", "repo", repo)
+			continue
+		}
+		for k, v := range allsecrets {
+			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
+				Name: k,
+				Data: v,
+			})
+			if err != nil {
+				slog.Error("failed to update repo secrets", "repo", repo, "error", err)
+				break
+			}
+			slog.Info("update repo secrets", "repo", repo, "secret", k)
+		}
 	}
 }

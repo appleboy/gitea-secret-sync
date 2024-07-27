@@ -9,7 +9,6 @@ import (
 	"strings"
 	"syscall"
 
-	gsdk "code.gitea.io/sdk/gitea"
 	"github.com/joho/godotenv"
 )
 
@@ -34,9 +33,26 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 func getGlobalValue(key string) string {
 	key = strings.ToUpper(key) // Convert key to uppercase
 
-	// If the "PLUGIN_<KEY>" environment variable doesn't exist or is empty,
+	// Check if there is an environment variable with the format "INPUT_<KEY>"
+	if value := os.Getenv("INPUT_" + key); value != "" {
+		return value // Return the value of the "INPUT_<KEY>" environment variable
+	}
+
+	// If the "INPUT_<KEY>" environment variable doesn't exist or is empty,
 	// return the value of the "<KEY>" environment variable
 	return os.Getenv(key)
+}
+
+func getSecretsFromEnv(secrets []string) map[string]string {
+	secretsMap := make(map[string]string)
+	for _, secret := range secrets {
+		val := getGlobalValue(secret)
+		if val == "" {
+			continue
+		}
+		secretsMap[secret] = val
+	}
+	return secretsMap
 }
 
 func main() {
@@ -49,7 +65,20 @@ func main() {
 	giteaServer := getGlobalValue("gitea_server")
 	giteaToken := getGlobalValue("gitea_token")
 	giteaSkip := getGlobalValue("gitea_skip_verify")
-	giteaOrg := getGlobalValue("gitea_org")
+	secrets := getGlobalValue("secrets")
+
+	if giteaServer == "" || giteaToken == "" {
+		slog.Error("missing gitea server or token")
+		return
+	}
+
+	allsecrets := getSecretsFromEnv(strings.Split(secrets, ","))
+	if len(allsecrets) == 0 {
+		slog.Error("can't find any secrets")
+		return
+	}
+
+	slog.Info("gitea server", "value", giteaServer)
 
 	// init gitea client
 	ctx := withContextFunc(context.Background(), func() {})
@@ -65,28 +94,5 @@ func main() {
 	if err != nil {
 		slog.Error("failed to init gitea client", "error", err)
 		return
-	}
-
-	rows, _, err := g.client.ListOrgActionSecret(giteaOrg, gsdk.ListOrgActionSecretOption{
-		ListOptions: gsdk.ListOptions{
-			Page:     1,
-			PageSize: 10,
-		},
-	})
-	if err != nil {
-		slog.Error("failed to list org action secrets", "error", err)
-		return
-	}
-
-	for _, row := range rows {
-		slog.Info(
-			"get secret",
-			"name",
-			row.Name,
-			"value",
-			row.Data,
-			"created",
-			row.Created,
-		)
 	}
 }

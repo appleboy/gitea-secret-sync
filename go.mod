@@ -2,7 +2,10 @@ module sync-secrets
 
 go 1.22
 
-require code.gitea.io/sdk/gitea v0.19.0
+require (
+	code.gitea.io/sdk/gitea v0.19.0
+	github.com/joho/godotenv v1.5.1
+)
 
 require (
 	github.com/davidmz/go-pageant v1.0.2 // indirect

@@ -1,15 +1,8 @@
 package main
 
-func PtrToString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func PtrToBool(b *bool) bool {
-	if b == nil {
+func ToBool(s string) bool {
+	if s == "" {
 		return false
 	}
-	return *b
+	return s == "true"
 }

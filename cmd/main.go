@@ -6,9 +6,11 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	gsdk "code.gitea.io/sdk/gitea"
+	"github.com/joho/godotenv"
 )
 
 func withContextFunc(ctx context.Context, f func()) context.Context {
@@ -29,21 +31,33 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 	return ctx
 }
 
-func main() {
-	giteaServer := flag.String("gitea-server", "", "gitea server url")
-	giteaToken := flag.String("gitea-token", "", "gitea access token")
-	giteaSkip := flag.Bool("gitea-skip-verify", false, "skip verify gitea server")
-	giteaOrg := flag.String("gitea-org", "", "gitea organization")
+func getGlobalValue(key string) string {
+	key = strings.ToUpper(key) // Convert key to uppercase
 
+	// If the "PLUGIN_<KEY>" environment variable doesn't exist or is empty,
+	// return the value of the "<KEY>" environment variable
+	return os.Getenv(key)
+}
+
+func main() {
+	var envfile string
+	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
 	flag.Parse()
+
+	_ = godotenv.Load(envfile)
+
+	giteaServer := getGlobalValue("gitea_server")
+	giteaToken := getGlobalValue("gitea_token")
+	giteaSkip := getGlobalValue("gitea_skip_verify")
+	giteaOrg := getGlobalValue("gitea_org")
 
 	// init gitea client
 	ctx := withContextFunc(context.Background(), func() {})
 	g := &gitea{
 		ctx:        ctx,
-		server:     PtrToString(giteaServer),
-		token:      PtrToString(giteaToken),
-		skipVerify: PtrToBool(giteaSkip),
+		server:     giteaServer,
+		token:      giteaToken,
+		skipVerify: ToBool(giteaSkip),
 		logger:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
 	}
 
@@ -53,7 +67,7 @@ func main() {
 		return
 	}
 
-	rows, _, err := g.client.ListOrgActionSecret(PtrToString(giteaOrg), gsdk.ListOrgActionSecretOption{
+	rows, _, err := g.client.ListOrgActionSecret(giteaOrg, gsdk.ListOrgActionSecretOption{
 		ListOptions: gsdk.ListOptions{
 			Page:     1,
 			PageSize: 10,

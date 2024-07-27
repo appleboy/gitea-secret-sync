@@ -17,7 +17,7 @@ func TestToBool(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := ToBool(test.input)
+		result := toBool(test.input)
 		if result != test.expected {
 			t.Errorf("ToBool(%s) = %v, expected %v", test.input, result, test.expected)
 		}

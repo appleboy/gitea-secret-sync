@@ -31,19 +31,6 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 	return ctx
 }
 
-func getGlobalValue(key string) string {
-	key = strings.ToUpper(key) // Convert key to uppercase
-
-	// Check if there is an environment variable with the format "INPUT_<KEY>"
-	if value := os.Getenv("INPUT_" + key); value != "" {
-		return value // Return the value of the "INPUT_<KEY>" environment variable
-	}
-
-	// If the "INPUT_<KEY>" environment variable doesn't exist or is empty,
-	// return the value of the "<KEY>" environment variable
-	return os.Getenv(key)
-}
-
 func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
@@ -77,7 +64,7 @@ func main() {
 		ctx:        ctx,
 		server:     giteaServer,
 		token:      giteaToken,
-		skipVerify: ToBool(giteaSkip),
+		skipVerify: toBool(giteaSkip),
 		logger:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
 	}
 

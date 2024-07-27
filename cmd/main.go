@@ -44,18 +44,6 @@ func getGlobalValue(key string) string {
 	return os.Getenv(key)
 }
 
-func getSecretsFromEnv(secrets []string) map[string]string {
-	secretsMap := make(map[string]string)
-	for _, secret := range secrets {
-		val := getGlobalValue(secret)
-		if val == "" {
-			continue
-		}
-		secretsMap[secret] = val
-	}
-	return secretsMap
-}
-
 func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
@@ -75,7 +63,7 @@ func main() {
 		return
 	}
 
-	allsecrets := getSecretsFromEnv(strings.Split(secrets, ","))
+	allsecrets := getDataFromEnv(strings.Split(secrets, ","))
 	if len(allsecrets) == 0 {
 		slog.Error("can't find any secrets")
 		return

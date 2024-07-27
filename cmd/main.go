@@ -77,6 +77,9 @@ func main() {
 	// update gitea org secrets
 	orgsList := strings.Split(orgs, ",")
 	for _, org := range orgsList {
+		if org == "" {
+			continue
+		}
 		for k, v := range allsecrets {
 			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
 				Name: k,
@@ -93,6 +96,9 @@ func main() {
 	// update gitea repo secrets
 	reposList := strings.Split(repos, ",")
 	for _, repo := range reposList {
+		if repo == "" {
+			continue
+		}
 		// check if the repo is in the format "org/repo"
 		val := strings.Split(repo, "/")
 		if len(val) != 2 {

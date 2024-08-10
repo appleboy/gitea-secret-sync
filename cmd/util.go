@@ -5,11 +5,8 @@ import (
 	"strings"
 )
 
-func toBool(s string) bool {
-	if s == "" {
-		return false
-	}
-	return s == "true"
+func toBool(value string) bool {
+	return strings.ToLower(value) == "true"
 }
 
 func getGlobalValue(key string) string {

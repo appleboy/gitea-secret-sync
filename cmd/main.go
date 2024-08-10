@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -11,6 +12,12 @@ import (
 
 	gsdk "code.gitea.io/sdk/gitea"
 	"github.com/joho/godotenv"
+)
+
+var (
+	Version     string
+	Commit      string
+	showVersion bool
 )
 
 func withContextFunc(ctx context.Context, f func()) context.Context {
@@ -34,7 +41,13 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
+	flag.BoolVar(&showVersion, "version", false, "Show version")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("Version: %s Commit: %s\n", Version, Commit)
+		return
+	}
 
 	_ = godotenv.Load(envfile)
 

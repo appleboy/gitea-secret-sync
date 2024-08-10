@@ -59,8 +59,8 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X github.com/appleboy/gitea-secret-sync/cmd.Version={{.Version}}
-      - -X github.com/appleboy/gitea-secret-sync/cmd.Commit={{.ShortCommit}}
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
     binary: >-
       {{ .ProjectName }}-
       {{- if .IsSnapshot }}{{ .Branch }}-

@@ -2,7 +2,7 @@ GO ?= go
 EXECUTABLE := gitea-secret-sync
 GOFILES := $(shell find . -type f -name "*.go")
 TAGS ?=
-LDFLAGS ?= -X 'github.com/appleboy/gitea-secret-sync/cmd.Version=$(VERSION)' -X 'github.com/appleboy/gitea-secret-sync/cmd.Commit=$(COMMIT)'
+LDFLAGS ?= -X 'main.Version=$(VERSION)' -X 'main.Commit=$(COMMIT)'
 
 ifneq ($(shell uname), Darwin)
 	EXTLDFLAGS = -extldflags "-static" $(null)

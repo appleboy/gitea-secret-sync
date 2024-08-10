@@ -105,8 +105,13 @@ func main() {
 				Data: v,
 			})
 			if err != nil {
-				slog.Error("failed to update org secrets", "org", org, "error", err)
-				break
+				slog.Error(
+					"failed to update org secrets",
+					"org", org,
+					"secret", k,
+					"error", err,
+				)
+				continue
 			}
 			slog.Info("update org secrets", "org", org, "secret", k)
 		}
@@ -134,8 +139,13 @@ func main() {
 				Data: v,
 			})
 			if err != nil {
-				slog.Error("failed to update repo secrets", "repo", repo, "error", err)
-				break
+				slog.Error(
+					"failed to update repo secrets",
+					"repo", repo,
+					"secret", k,
+					"error", err,
+				)
+				continue
 			}
 			slog.Info("update repo secrets", "repo", repo, "secret", k)
 		}

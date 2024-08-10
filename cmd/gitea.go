@@ -53,12 +53,18 @@ func (g *gitea) init() error {
 }
 
 // NewGitea creates a new instance of the gitea struct.
-func NewGitea(ctx context.Context, logger *slog.Logger) (*gitea, error) {
+func NewGitea(
+	ctx context.Context,
+	server string,
+	token string,
+	skipVerify bool,
+	logger *slog.Logger,
+) (*gitea, error) {
 	g := &gitea{
 		ctx:        ctx,
-		server:     "",
-		token:      "",
-		skipVerify: false,
+		server:     server,
+		token:      token,
+		skipVerify: skipVerify,
 		logger:     logger,
 	}
 

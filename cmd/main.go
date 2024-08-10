@@ -77,15 +77,13 @@ func main() {
 
 	// init gitea client
 	ctx := withContextFunc(context.Background(), func() {})
-	g := &gitea{
-		ctx:        ctx,
-		server:     giteaServer,
-		token:      giteaToken,
-		skipVerify: toBool(giteaSkip),
-		logger:     slog.New(slog.NewTextHandler(os.Stdout, nil)),
-	}
-
-	err := g.init()
+	g, err := NewGitea(
+		ctx,
+		giteaServer,
+		giteaToken,
+		toBool(giteaSkip),
+		slog.New(slog.NewTextHandler(os.Stdout, nil)),
+	)
 	if err != nil {
 		slog.Error("failed to init gitea client", "error", err)
 		return

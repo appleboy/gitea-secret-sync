@@ -23,7 +23,7 @@ type gitea struct {
 }
 
 // init initializes the gitea client.
-func (g *gitea) init() error {
+func (g *gitea) init() (err error) {
 	if g.server == "" || g.token == "" {
 		return errors.New("mission gitea server or token")
 	}
@@ -47,11 +47,10 @@ func (g *gitea) init() error {
 	}
 	opts = append(opts, gsdk.SetHTTPClient(httpClient))
 
-	client, err := gsdk.NewClient(g.server, opts...)
+	g.client, err = gsdk.NewClient(g.server, opts...)
 	if err != nil {
 		return err
 	}
-	g.client = client
 
 	return nil
 }

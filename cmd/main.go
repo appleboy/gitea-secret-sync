@@ -92,6 +92,7 @@ func main() {
 	// update gitea org secrets
 	orgsList := strings.Split(orgs, ",")
 	for _, org := range orgsList {
+		org = strings.TrimSpace(org)
 		if org == "" {
 			continue
 		}
@@ -120,6 +121,7 @@ func main() {
 	// update gitea repo secrets
 	reposList := strings.Split(repos, ",")
 	for _, repo := range reposList {
+		repo = strings.TrimSpace(repo)
 		if repo == "" {
 			continue
 		}

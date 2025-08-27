@@ -25,10 +25,18 @@ func TestToBool(t *testing.T) {
 }
 
 func TestGetGlobalValue(t *testing.T) {
-	os.Setenv("KEY1", "value1")
-	os.Setenv("KEY2", "value2")
-	os.Setenv("KEY3", "value3")
-	os.Setenv("INPUT_KEY4", "value4")
+	if err := os.Setenv("KEY1", "value1"); err != nil {
+		t.Fatalf("Failed to set KEY1: %v", err)
+	}
+	if err := os.Setenv("KEY2", "value2"); err != nil {
+		t.Fatalf("Failed to set KEY2: %v", err)
+	}
+	if err := os.Setenv("KEY3", "value3"); err != nil {
+		t.Fatalf("Failed to set KEY3: %v", err)
+	}
+	if err := os.Setenv("INPUT_KEY4", "value4"); err != nil {
+		t.Fatalf("Failed to set INPUT_KEY4: %v", err)
+	}
 
 	// test KEY1
 	if val := getGlobalValue("KEY1"); val != "value1" {

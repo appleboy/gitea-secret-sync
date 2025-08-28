@@ -57,6 +57,7 @@ func main() {
 	secrets := getGlobalValue("secrets")
 	orgs := getGlobalValue("orgs")
 	repos := getGlobalValue("repos")
+	description := getGlobalValue("description")
 	dryRun := toBool(getGlobalValue("dry_run"))
 
 	if giteaServer == "" || giteaToken == "" {
@@ -102,8 +103,9 @@ func main() {
 				continue
 			}
 			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
-				Name: k,
-				Data: v,
+				Name:        k,
+				Data:        v,
+				Description: description,
 			})
 			if err != nil {
 				slog.Error(
@@ -137,8 +139,9 @@ func main() {
 				continue
 			}
 			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
-				Name: k,
-				Data: v,
+				Name:        k,
+				Data:        v,
+				Description: description,
 			})
 			if err != nil {
 				slog.Error(

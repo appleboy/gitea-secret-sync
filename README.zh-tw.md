@@ -60,13 +60,12 @@ gitea-secret-sync [選項]
 
 #### 可選配置
 
-| 變數 | 描述 | 預設值 | 範例 |
-| ---- | ---- | ------ | ---- |
-
-| `GITEA_SKIP_VERIFY` | 跳過 SSL 憑證驗證 | `false` | `true` |
-| `ORGS` | 要更新的組織清單（以逗號分隔） | - | `org1,org2,org3` |
-| `REPOS` | 要更新的倉庫清單（以逗號分隔） | - | `org1/repo1,org2/repo2` |
-| `DRY_RUN` | 啟用預覽模式（僅預覽） | `false` | `true` |
+| 變數                | 描述                           | 預設值  | 範例                    |
+| ------------------- | ------------------------------ | ------- | ----------------------- |
+| `GITEA_SKIP_VERIFY` | 跳過 SSL 憑證驗證              | `false` | `true`                  |
+| `ORGS`              | 要更新的組織清單（以逗號分隔） | -       | `org1,org2,org3`        |
+| `REPOS`             | 要更新的倉庫清單（以逗號分隔） | -       | `org1/repo1,org2/repo2` |
+| `DRY_RUN`           | 啟用預覽模式（僅預覽）         | `false` | `true`                  |
 
 #### 機密值
 
@@ -155,10 +154,7 @@ DRY_RUN=true ./gitea-secret-sync
 
 ```bash
 # 僅為特定組織更新機密
-export GITEA_SERVER=https
-```
-
-://gitea.example.com
+export GITEA_SERVER=https://gitea.example.com
 export GITEA_TOKEN=your_token
 export SECRETS=SECRET1,SECRET2
 export SECRET1=value1
@@ -166,8 +162,7 @@ export SECRET2=value2
 export ORGS=org1,org2
 
 ./gitea-secret-sync
-
-````
+```
 
 ### 僅更新倉庫
 
@@ -181,7 +176,7 @@ export SECRET2=value2
 export REPOS=org1/repo1,org1/repo2,org2/repo3
 
 ./gitea-secret-sync
-````
+```
 
 ## 取得您的 Gitea 權杖
 

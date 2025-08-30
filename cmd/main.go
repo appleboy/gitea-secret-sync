@@ -18,6 +18,7 @@ var (
 	Version     string
 	Commit      string
 	showVersion bool
+	debugMode   bool
 )
 
 func withContextFunc(ctx context.Context, f func()) context.Context {
@@ -42,6 +43,7 @@ func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
 	flag.BoolVar(&showVersion, "version", false, "Show version")
+	flag.BoolVar(&debugMode, "debug", false, "Enable debug mode")
 	flag.Parse()
 
 	if showVersion {
@@ -59,6 +61,12 @@ func main() {
 	repos := getGlobalValue("repos")
 	description := getGlobalValue("description")
 	dryRun := toBool(getGlobalValue("dry_run"))
+	debugFromEnv := toBool(getGlobalValue("debug"))
+
+	// Use debug mode from command line flag OR environment variable
+	if !debugMode {
+		debugMode = debugFromEnv
+	}
 
 	if giteaServer == "" || giteaToken == "" {
 		slog.Error("missing gitea server or token")
@@ -71,7 +79,42 @@ func main() {
 		return
 	}
 
+	// Configure slog level based on debug mode
+	var logLevel slog.Level
+	if debugMode {
+		logLevel = slog.LevelDebug
+	} else {
+		logLevel = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: logLevel,
+	}))
+
+	// Set the default logger
+	slog.SetDefault(logger)
+
 	slog.Info("gitea server", "value", giteaServer)
+
+	if debugMode {
+		slog.Debug("=== Debug Mode: Configuration Values ===")
+		slog.Debug("--- Command Line Flags ---")
+		slog.Debug("flag.env-file", "value", envfile)
+		slog.Debug("flag.version", "value", showVersion)
+		slog.Debug("flag.debug", "value", debugMode)
+		slog.Debug("--- Environment Variables ---")
+		slog.Debug("gitea_server", "value", giteaServer)
+		slog.Debug("gitea_token", "value", "***HIDDEN***")
+		slog.Debug("gitea_skip_verify", "value", giteaSkip)
+		slog.Debug("secrets", "value", secrets)
+		slog.Debug("orgs", "value", orgs)
+		slog.Debug("repos", "value", repos)
+		slog.Debug("description", "value", description)
+		slog.Debug("dry_run", "value", dryRun)
+		slog.Debug("debug", "value", debugMode)
+		slog.Debug("=========================================")
+	}
+
 	if dryRun {
 		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
 	}
@@ -83,7 +126,7 @@ func main() {
 		giteaServer,
 		giteaToken,
 		toBool(giteaSkip),
-		slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		logger,
 	)
 	if err != nil {
 		slog.Error("failed to init gitea client", "error", err)

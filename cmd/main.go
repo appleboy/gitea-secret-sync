@@ -39,6 +39,12 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 	return ctx
 }
 
+// fatalError logs an error and exits with code 1
+func fatalError(msg string, args ...interface{}) {
+	slog.Error(msg, args...)
+	os.Exit(1)
+}
+
 func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
@@ -66,17 +72,6 @@ func main() {
 	// Use debug mode from command line flag OR environment variable
 	if !debugMode {
 		debugMode = debugFromEnv
-	}
-
-	if giteaServer == "" || giteaToken == "" {
-		slog.Error("missing gitea server or token")
-		return
-	}
-
-	allsecrets := getDataFromEnv(strings.Split(secrets, ","))
-	if len(allsecrets) == 0 {
-		slog.Error("can't find any secrets")
-		return
 	}
 
 	// Configure slog level based on debug mode
@@ -115,6 +110,15 @@ func main() {
 		slog.Debug("=========================================")
 	}
 
+	if giteaServer == "" || giteaToken == "" {
+		fatalError("missing gitea server or token")
+	}
+
+	allsecrets := getDataFromEnv(strings.Split(secrets, ","))
+	if len(allsecrets) == 0 {
+		fatalError("can't find any secrets")
+	}
+
 	if dryRun {
 		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
 	}
@@ -129,8 +133,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		slog.Error("failed to init gitea client", "error", err)
-		return
+		fatalError("failed to init gitea client", "error", err)
 	}
 
 	// update gitea org secrets

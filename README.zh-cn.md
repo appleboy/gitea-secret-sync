@@ -56,15 +56,15 @@ gitea-secret-sync [选项]
 | -------------- | ---------------------------------- | --------------------------- |
 | `GITEA_SERVER` | Gitea 服务器 URL                   | `https://gitea.example.com` |
 | `GITEA_TOKEN`  | Gitea 访问令牌                     | `your_gitea_token_here`     |
-| `SECRETS`      | 要同步的密钥名称列表（以逗号分隔） | `SECRET1,SECRET2,SECRET3`   |
+| `SECRETS`      | 要同步的密钥名称列表（逗号或换行分隔） | `SECRET1,SECRET2,SECRET3`   |
 
 #### 可选配置
 
 | 变量                | 描述                           | 默认值  | 示例                    |
 | ------------------- | ------------------------------ | ------- | ----------------------- |
 | `GITEA_SKIP_VERIFY` | 跳过 SSL 证书验证              | `false` | `true`                  |
-| `ORGS`              | 要更新的组织列表（以逗号分隔） | -       | `org1,org2,org3`        |
-| `REPOS`             | 要更新的仓库列表（以逗号分隔） | -       | `org1/repo1,org2/repo2` |
+| `ORGS`              | 要更新的组织列表（逗号或换行分隔） | -       | `org1,org2,org3`        |
+| `REPOS`             | 要更新的仓库列表（逗号或换行分隔） | -       | `org1/repo1,org2/repo2` |
 | `DRY_RUN`           | 启用预览模式（仅预览）         | `false` | `true`                  |
 
 #### 密钥值
@@ -78,6 +78,45 @@ SECRET2=actual_secret_value_2
 SECRET3=actual_secret_value_3
 ```
 
+### 输入格式支持
+
+该工具支持 `SECRETS`、`ORGS` 和 `REPOS` 变量的灵活输入格式：
+
+#### 逗号分隔（传统格式）
+
+```bash
+SECRETS=SECRET1,SECRET2,SECRET3
+ORGS=org1,org2,org3
+REPOS=org1/repo1,org2/repo2,org3/repo3
+```
+
+#### 换行分隔格式
+
+```bash
+SECRETS="SECRET1
+SECRET2
+SECRET3"
+
+ORGS="org1
+org2
+org3"
+
+REPOS="org1/repo1
+org2/repo2
+org3/repo3"
+```
+
+#### 混合格式（逗号与换行）
+
+```bash
+SECRETS="SECRET1,SECRET2
+SECRET3"
+ORGS="org1,org2
+org3"
+```
+
+**注意：** 额外的空白字符和空项目会自动处理并过滤掉。
+
 ## 配置示例
 
 ### 使用 .env 文件
@@ -90,16 +129,29 @@ GITEA_SERVER=https://gitea.example.com
 GITEA_TOKEN=your_gitea_access_token
 GITEA_SKIP_VERIFY=false
 
-# 要同步的密钥
+# 要同步的密钥（逗号分隔格式）
 SECRETS=DATABASE_URL,API_KEY,JWT_SECRET
+
+# 另一种选择：换行分隔格式
+# SECRETS="DATABASE_URL
+# API_KEY
+# JWT_SECRET"
 
 # 密钥值
 DATABASE_URL=postgresql://user:pass@localhost/db
 API_KEY=sk-1234567890abcdef
 JWT_SECRET=super-secret-jwt
-# 目标组织和仓库
+
+# 目标组织和仓库（逗号分隔）
 ORGS=my-org,another-org
 REPOS=my-org/repo1,my-org/repo2,another-org/repo3
+
+# 另一种选择：换行分隔格式
+# ORGS="my-org
+# another-org"
+# REPOS="my-org/repo1
+# my-org/repo2
+# another-org/repo3"
 
 # 可选：启用预览模式
 DRY_RUN=false
@@ -227,18 +279,20 @@ go test ./cmd
 
 ```txt
 cmd/
-├── gitea.go      # 具有 SSL 配置的 Gitea 客户端包装器
-├── main.go       # 主应用程序入口点和逻辑
-├── util.go       # 环境变量的实用函数
-└── util_test.go  # 实用函数的单元测试
+├── gitea.go           # 具有 SSL 配置的 Gitea 客户端包装器
+├── main.go            # 主应用程序入口点和逻辑
+├── util.go            # 环境变量和字符串解析的实用函数
+├── util_test.go       # 实用函数的单元测试
+└── util_split_test.go # 字符串分割功能的单元测试
 ```
 
 ### 主要组件
 
 - **`gitea.go`**：实现具有 SSL 配置支持的 Gitea 客户端包装器
 - **`main.go`**：包含主应用程序逻辑、信号处理和批处理
-- **`util.go`**：提供读取环境变量的实用函数，支持 INPUT\_ 前缀
+- **`util.go`**：提供读取环境变量的实用函数，支持 INPUT\_ 前缀和灵活的字符串解析（逗号/换行分隔）
 - **`util_test.go`**：实用函数的单元测试
+- **`util_split_test.go`**：新字符串分割功能的单元测试
 
 ## 贡献
 

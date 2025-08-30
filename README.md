@@ -56,15 +56,15 @@ The tool supports two formats for environment variables:
 | -------------- | -------------------------------------------- | --------------------------- |
 | `GITEA_SERVER` | Gitea server URL                             | `https://gitea.example.com` |
 | `GITEA_TOKEN`  | Gitea access token                           | `your_gitea_token_here`     |
-| `SECRETS`      | Comma-separated list of secret names to sync | `SECRET1,SECRET2,SECRET3`   |
+| `SECRETS`      | Comma or newline-separated list of secret names to sync | `SECRET1,SECRET2,SECRET3`   |
 
 #### Optional Configuration
 
 | Variable            | Description                                     | Default | Example                 |
 | ------------------- | ----------------------------------------------- | ------- | ----------------------- |
 | `GITEA_SKIP_VERIFY` | Skip SSL certificate verification               | `false` | `true`                  |
-| `ORGS`              | Comma-separated list of organizations to update | -       | `org1,org2,org3`        |
-| `REPOS`             | Comma-separated list of repositories to update  | -       | `org1/repo1,org2/repo2` |
+| `ORGS`              | Comma or newline-separated list of organizations to update | -       | `org1,org2,org3`        |
+| `REPOS`             | Comma or newline-separated list of repositories to update  | -       | `org1/repo1,org2/repo2` |
 | `DRY_RUN`           | Enable dry-run mode (preview only)              | `false` | `true`                  |
 
 #### Secret Values
@@ -78,6 +78,45 @@ SECRET2=actual_secret_value_2
 SECRET3=actual_secret_value_3
 ```
 
+### Input Format Support
+
+The tool supports flexible input formats for `SECRETS`, `ORGS`, and `REPOS` variables:
+
+#### Comma-separated (traditional format)
+
+```bash
+SECRETS=SECRET1,SECRET2,SECRET3
+ORGS=org1,org2,org3
+REPOS=org1/repo1,org2/repo2,org3/repo3
+```
+
+#### Newline-separated format
+
+```bash
+SECRETS="SECRET1
+SECRET2
+SECRET3"
+
+ORGS="org1
+org2
+org3"
+
+REPOS="org1/repo1
+org2/repo2
+org3/repo3"
+```
+
+#### Mixed format (comma and newline)
+
+```bash
+SECRETS="SECRET1,SECRET2
+SECRET3"
+ORGS="org1,org2
+org3"
+```
+
+**Note:** Extra whitespace and empty items are automatically handled and filtered out.
+
 ## Configuration Examples
 
 ### Using .env File
@@ -90,16 +129,29 @@ GITEA_SERVER=https://gitea.example.com
 GITEA_TOKEN=your_gitea_access_token
 GITEA_SKIP_VERIFY=false
 
-# Secrets to sync
+# Secrets to sync (comma-separated format)
 SECRETS=DATABASE_URL,API_KEY,JWT_SECRET
+
+# Alternative: newline-separated format
+# SECRETS="DATABASE_URL
+# API_KEY
+# JWT_SECRET"
 
 # Secret values
 DATABASE_URL=postgresql://user:pass@localhost/db
 API_KEY=sk-1234567890abcdef
 JWT_SECRET=super-secret-jwt
-# Target organizations and repositories
+
+# Target organizations and repositories (comma-separated)
 ORGS=my-org,another-org
 REPOS=my-org/repo1,my-org/repo2,another-org/repo3
+
+# Alternative: newline-separated format
+# ORGS="my-org
+# another-org"
+# REPOS="my-org/repo1
+# my-org/repo2
+# another-org/repo3"
 
 # Optional: Enable dry-run mode
 DRY_RUN=false
@@ -178,6 +230,27 @@ export REPOS=org1/repo1,org1/repo2,org2/repo3
 ./gitea-secret-sync
 ```
 
+### Using Newline-Separated Format
+
+```bash
+# Example using newline-separated format for better readability
+export GITEA_SERVER=https://gitea.example.com
+export GITEA_TOKEN=your_token
+export SECRETS="DATABASE_URL
+API_KEY
+JWT_SECRET
+WEBHOOK_SECRET"
+export DATABASE_URL=postgresql://user:pass@localhost/db
+export API_KEY=sk-1234567890abcdef
+export JWT_SECRET=super-secret-jwt
+export WEBHOOK_SECRET=whsec_1234567890
+export ORGS="production-org
+staging-org
+development-org"
+
+./gitea-secret-sync
+```
+
 ## Getting Your Gitea Token
 
 1. Log in to your Gitea instance
@@ -227,18 +300,20 @@ go test ./cmd
 
 ```txt
 cmd/
-├── gitea.go      # Gitea client wrapper with SSL configuration
-├── main.go       # Main application entry point and logic
-├── util.go       # Utility functions for environment variables
-└── util_test.go  # Unit tests for utility functions
+├── gitea.go           # Gitea client wrapper with SSL configuration
+├── main.go            # Main application entry point and logic
+├── util.go            # Utility functions for environment variables and string parsing
+├── util_test.go       # Unit tests for utility functions
+└── util_split_test.go # Unit tests for string splitting functionality
 ```
 
 ### Key Components
 
 - **`gitea.go`**: Implements the Gitea client wrapper with SSL configuration support
 - **`main.go`**: Contains the main application logic, signal handling, and batch processing
-- **`util.go`**: Provides utility functions for reading environment variables with INPUT\_ prefix support
+- **`util.go`**: Provides utility functions for reading environment variables with INPUT\_ prefix support and flexible string parsing (comma/newline separation)
 - **`util_test.go`**: Unit tests for utility functions
+- **`util_split_test.go`**: Unit tests for the new string splitting functionality
 
 ## Contributing
 

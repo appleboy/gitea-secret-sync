@@ -33,3 +33,29 @@ func getDataFromEnv(keys []string) map[string]string {
 	}
 	return keysMap
 }
+
+// splitByCommaOrNewline splits a string by both commas and newlines,
+// trims whitespace from each item, and filters out empty strings
+func splitByCommaOrNewline(input string) []string {
+	if input == "" {
+		return []string{}
+	}
+
+	var result []string
+
+	// Replace newlines with commas to normalize the input
+	normalized := strings.ReplaceAll(input, "\n", ",")
+
+	// Split by commas
+	parts := strings.Split(normalized, ",")
+
+	// Trim whitespace and filter out empty strings
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	return result
+}

@@ -114,7 +114,7 @@ func main() {
 		fatalError("missing gitea server or token")
 	}
 
-	allsecrets := getDataFromEnv(strings.Split(secrets, ","))
+	allsecrets := getDataFromEnv(splitByCommaOrNewline(secrets))
 	if len(allsecrets) == 0 {
 		fatalError("can't find any secrets")
 	}
@@ -137,7 +137,7 @@ func main() {
 	}
 
 	// update gitea org secrets
-	orgsList := strings.Split(orgs, ",")
+	orgsList := splitByCommaOrNewline(orgs)
 	for _, org := range orgsList {
 		org = strings.TrimSpace(org)
 		if org == "" {
@@ -167,7 +167,7 @@ func main() {
 	}
 
 	// update gitea repo secrets
-	reposList := strings.Split(repos, ",")
+	reposList := splitByCommaOrNewline(repos)
 	for _, repo := range reposList {
 		repo = strings.TrimSpace(repo)
 		if repo == "" {

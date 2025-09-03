@@ -45,6 +45,96 @@ func fatalError(msg string, args ...interface{}) {
 	os.Exit(1)
 }
 
+// validateRepoFormat validates that repo is in "org/repo" format
+func validateRepoFormat(repo string) bool {
+	if repo == "" {
+		return false
+	}
+	parts := strings.Split(repo, "/")
+	return len(parts) == 2 && parts[0] != "" && parts[1] != ""
+}
+
+// validateConfiguration validates required configuration parameters
+func validateConfiguration(giteaServer, giteaToken string, secrets map[string]string) {
+	if giteaServer == "" || giteaToken == "" {
+		fatalError("missing gitea server or token")
+	}
+	if len(secrets) == 0 {
+		fatalError("can't find any secrets")
+	}
+}
+
+// processOrgs processes organization secrets
+func processOrgs(g *gitea, orgs string, secrets map[string]string, description string, dryRun bool) {
+	orgsList := splitByCommaOrNewline(orgs)
+	for _, org := range orgsList {
+		org = strings.TrimSpace(org)
+		if org == "" {
+			continue
+		}
+		for k, v := range secrets {
+			if dryRun {
+				slog.Info("update org secrets", "org", org, "secret", k)
+				continue
+			}
+			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
+				Name:        k,
+				Data:        v,
+				Description: description,
+			})
+			if err != nil {
+				slog.Error(
+					"failed to update org secrets",
+					"org", org,
+					"secret", k,
+					"error", err,
+				)
+				continue
+			}
+			slog.Info("update org secrets", "org", org, "secret", k)
+		}
+	}
+}
+
+// processRepos processes repository secrets
+func processRepos(g *gitea, repos string, secrets map[string]string, description string, dryRun bool) {
+	reposList := splitByCommaOrNewline(repos)
+	for _, repo := range reposList {
+		repo = strings.TrimSpace(repo)
+		if repo == "" {
+			continue
+		}
+		// check if the repo is in the format "org/repo"
+		if !validateRepoFormat(repo) {
+			slog.Error("invalid repo format, expected 'org/repo'", "repo", repo)
+			continue
+		}
+		val := strings.Split(repo, "/")
+
+		for k, v := range secrets {
+			if dryRun {
+				slog.Info("update repo secrets", "repo", repo, "secret", k)
+				continue
+			}
+			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
+				Name:        k,
+				Data:        v,
+				Description: description,
+			})
+			if err != nil {
+				slog.Error(
+					"failed to update repo secrets",
+					"repo", repo,
+					"secret", k,
+					"error", err,
+				)
+				continue
+			}
+			slog.Info("update repo secrets", "repo", repo, "secret", k)
+		}
+	}
+}
+
 func main() {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
@@ -110,14 +200,8 @@ func main() {
 		slog.Debug("=========================================")
 	}
 
-	if giteaServer == "" || giteaToken == "" {
-		fatalError("missing gitea server or token")
-	}
-
 	allsecrets := getDataFromEnv(splitByCommaOrNewline(secrets))
-	if len(allsecrets) == 0 {
-		fatalError("can't find any secrets")
-	}
+	validateConfiguration(giteaServer, giteaToken, allsecrets)
 
 	if dryRun {
 		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
@@ -137,68 +221,8 @@ func main() {
 	}
 
 	// update gitea org secrets
-	orgsList := splitByCommaOrNewline(orgs)
-	for _, org := range orgsList {
-		org = strings.TrimSpace(org)
-		if org == "" {
-			continue
-		}
-		for k, v := range allsecrets {
-			if dryRun {
-				slog.Info("update org secrets", "org", org, "secret", k)
-				continue
-			}
-			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
-				Name:        k,
-				Data:        v,
-				Description: description,
-			})
-			if err != nil {
-				slog.Error(
-					"failed to update org secrets",
-					"org", org,
-					"secret", k,
-					"error", err,
-				)
-				continue
-			}
-			slog.Info("update org secrets", "org", org, "secret", k)
-		}
-	}
+	processOrgs(g, orgs, allsecrets, description, dryRun)
 
 	// update gitea repo secrets
-	reposList := splitByCommaOrNewline(repos)
-	for _, repo := range reposList {
-		repo = strings.TrimSpace(repo)
-		if repo == "" {
-			continue
-		}
-		// check if the repo is in the format "org/repo"
-		val := strings.Split(repo, "/")
-		if len(val) != 2 {
-			slog.Error("invalid repo format", "repo", repo)
-			continue
-		}
-		for k, v := range allsecrets {
-			if dryRun {
-				slog.Info("update repo secrets", "repo", repo, "secret", k)
-				continue
-			}
-			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
-				Name:        k,
-				Data:        v,
-				Description: description,
-			})
-			if err != nil {
-				slog.Error(
-					"failed to update repo secrets",
-					"repo", repo,
-					"secret", k,
-					"error", err,
-				)
-				continue
-			}
-			slog.Info("update repo secrets", "repo", repo, "secret", k)
-		}
-	}
+	processRepos(g, repos, allsecrets, description, dryRun)
 }

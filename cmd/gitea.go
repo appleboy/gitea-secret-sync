@@ -25,7 +25,7 @@ type gitea struct {
 // init initializes the gitea client.
 func (g *gitea) init() (err error) {
 	if g.server == "" || g.token == "" {
-		return errors.New("mission gitea server or token")
+		return errors.New("missing gitea server or token")
 	}
 
 	g.server = strings.TrimRight(g.server, "/")
@@ -35,7 +35,11 @@ func (g *gitea) init() (err error) {
 	}
 
 	// add new http client for skip verify
-	certs, _ := x509.SystemCertPool()
+	certs, err := x509.SystemCertPool()
+	if err != nil {
+		g.logger.Warn("failed to load system cert pool, using empty pool", "error", err)
+		certs = x509.NewCertPool()
+	}
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{

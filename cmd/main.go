@@ -47,10 +47,10 @@ func setupGracefulShutdown(ctx context.Context) (context.Context, func()) {
 	return ctx, cleanup
 }
 
-// logError logs an error and returns it for the caller to handle
+// logError logs an error using structured logging and returns a simple error for the caller to handle
 func logError(msg string, args ...interface{}) error {
 	slog.Error(msg, args...)
-	return fmt.Errorf(msg, args...)
+	return fmt.Errorf("%s", msg)
 }
 
 // validateRepoFormat validates that repo is in "org/repo" format

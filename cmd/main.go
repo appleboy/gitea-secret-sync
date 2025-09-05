@@ -39,10 +39,10 @@ func withContextFunc(ctx context.Context, f func()) context.Context {
 	return ctx
 }
 
-// fatalError logs an error and exits with code 1
-func fatalError(msg string, args ...interface{}) {
+// logError logs an error and returns it for the caller to handle
+func logError(msg string, args ...interface{}) error {
 	slog.Error(msg, args...)
-	os.Exit(1)
+	return fmt.Errorf(msg, args...)
 }
 
 // validateRepoFormat validates that repo is in "org/repo" format
@@ -55,13 +55,14 @@ func validateRepoFormat(repo string) bool {
 }
 
 // validateConfiguration validates required configuration parameters
-func validateConfiguration(giteaServer, giteaToken string, secrets map[string]string) {
+func validateConfiguration(giteaServer, giteaToken string, secrets map[string]string) error {
 	if giteaServer == "" || giteaToken == "" {
-		fatalError("missing gitea server or token")
+		return logError("missing gitea server or token")
 	}
 	if len(secrets) == 0 {
-		fatalError("can't find any secrets")
+		return logError("can't find any secrets")
 	}
+	return nil
 }
 
 // processOrgs processes organization secrets
@@ -136,6 +137,13 @@ func processRepos(g *gitea, repos string, secrets map[string]string, description
 }
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("Application failed", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	var envfile string
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
 	flag.BoolVar(&showVersion, "version", false, "Show version")
@@ -144,7 +152,7 @@ func main() {
 
 	if showVersion {
 		fmt.Printf("Version: %s Commit: %s\n", Version, Commit)
-		return
+		return nil
 	}
 
 	_ = godotenv.Load(envfile)
@@ -201,7 +209,9 @@ func main() {
 	}
 
 	allsecrets := getDataFromEnv(splitByCommaOrNewline(secrets))
-	validateConfiguration(giteaServer, giteaToken, allsecrets)
+	if err := validateConfiguration(giteaServer, giteaToken, allsecrets); err != nil {
+		return err
+	}
 
 	if dryRun {
 		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
@@ -217,7 +227,7 @@ func main() {
 		logger,
 	)
 	if err != nil {
-		fatalError("failed to init gitea client", "error", err)
+		return logError("failed to init gitea client", "error", err)
 	}
 
 	// update gitea org secrets
@@ -225,4 +235,6 @@ func main() {
 
 	// update gitea repo secrets
 	processRepos(g, repos, allsecrets, description, dryRun)
+
+	return nil
 }

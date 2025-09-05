@@ -21,22 +21,30 @@ var (
 	debugMode   bool
 )
 
-func withContextFunc(ctx context.Context, f func()) context.Context {
+// setupGracefulShutdown sets up graceful shutdown handling with proper cleanup
+func setupGracefulShutdown(ctx context.Context) (context.Context, func()) {
 	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		defer signal.Stop(c)
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
+	cleanup := func() {
+		signal.Stop(c)
+		cancel()
+	}
+
+	go func() {
+		defer cleanup()
 		select {
 		case <-ctx.Done():
-		case <-c:
+			return
+		case sig := <-c:
+			slog.Info("Received shutdown signal", "signal", sig)
 			cancel()
-			f()
 		}
 	}()
 
-	return ctx
+	return ctx, cleanup
 }
 
 // logError logs an error and returns it for the caller to handle
@@ -217,8 +225,10 @@ func run() error {
 		slog.Warn("[DRY_RUN='true'] No changes will be written to secrets")
 	}
 
-	// init gitea client
-	ctx := withContextFunc(context.Background(), func() {})
+	// init gitea client with graceful shutdown
+	ctx, cleanup := setupGracefulShutdown(context.Background())
+	defer cleanup()
+
 	g, err := NewGitea(
 		ctx,
 		giteaServer,

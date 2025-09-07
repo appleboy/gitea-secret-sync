@@ -1,4 +1,3 @@
-
 package retry
 
 import (
@@ -8,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	gsdk "code.gitea.io/sdk/gitea"
 	"sync-secrets/core"
+
+	gsdk "code.gitea.io/sdk/gitea"
 )
 
 // RetryConfig holds configuration for retry behavior
@@ -18,16 +18,13 @@ type RetryConfig struct {
 	Logger     *slog.Logger
 }
 
-// DefaultRetrier implements the core.Retrier interface with default retry logic
-type DefaultRetrier struct {
+// DefaultRetrier implements the core.Retrier interface with default retry logic using generics
+type DefaultRetrier[T any] struct {
 	config *RetryConfig
 }
 
-// Ensure DefaultRetrier implements core.Retrier interface
-var _ core.Retrier = (*DefaultRetrier)(nil)
-
 // NewDefaultRetrier creates a new DefaultRetrier with the given configuration
-func NewDefaultRetrier(config *RetryConfig) *DefaultRetrier {
+func NewDefaultRetrier[T any](config *RetryConfig) *DefaultRetrier[T] {
 	if config == nil {
 		config = &RetryConfig{
 			MaxRetries: 3,
@@ -37,14 +34,14 @@ func NewDefaultRetrier(config *RetryConfig) *DefaultRetrier {
 	if config.Logger == nil {
 		config.Logger = slog.Default()
 	}
-	return &DefaultRetrier{
+	return &DefaultRetrier[T]{
 		config: config,
 	}
 }
 
-// DoWithRetry executes an operation that returns Response with retry logic
-func (r *DefaultRetrier) DoWithRetry(operation func() (*gsdk.Response, error)) (*gsdk.Response, error) {
-	var lastResp *gsdk.Response
+// DoWithRetry executes an operation that returns T with retry logic
+func (r *DefaultRetrier[T]) DoWithRetry(operation func() (T, error)) (T, error) {
+	var lastResp T
 
 	for i := 0; i < r.config.MaxRetries; i++ {
 		resp, err := operation()
@@ -57,14 +54,9 @@ func (r *DefaultRetrier) DoWithRetry(operation func() (*gsdk.Response, error)) (
 
 		if i < r.config.MaxRetries-1 {
 			backoff := time.Duration(i+1) * time.Second
-			statusCode := 0
-			if resp != nil {
-				statusCode = resp.StatusCode
-			}
 			r.config.Logger.Warn("operation failed, retrying",
 				"attempt", i+1,
 				"backoff", backoff,
-				"status_code", statusCode,
 				"error", err)
 			time.Sleep(backoff)
 		}
@@ -72,8 +64,45 @@ func (r *DefaultRetrier) DoWithRetry(operation func() (*gsdk.Response, error)) (
 	return lastResp, fmt.Errorf("operation failed after %d retries", r.config.MaxRetries)
 }
 
-// IsRetryable determines if an error/response is retryable
-func (r *DefaultRetrier) IsRetryable(resp *gsdk.Response, err error) bool {
+// IsRetryable determines if an error/response is retryable (default implementation)
+func (r *DefaultRetrier[T]) IsRetryable(resp T, err error) bool {
+	// Default implementation only checks for network-level errors
+	if err != nil {
+		// Check for network timeout errors
+		if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+			return true
+		}
+
+		// Check for HTTP status codes that indicate temporary issues
+		errMsg := err.Error()
+		if strings.Contains(errMsg, "500") ||
+			strings.Contains(errMsg, "502") ||
+			strings.Contains(errMsg, "503") ||
+			strings.Contains(errMsg, "504") {
+			return true
+		}
+
+		// Check for connection refused or network unreachable
+		if strings.Contains(errMsg, "connection refused") ||
+			strings.Contains(errMsg, "network is unreachable") ||
+			strings.Contains(errMsg, "no such host") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// GiteaRetrier is a concrete implementation for Gitea responses
+type GiteaRetrier struct {
+	*DefaultRetrier[*gsdk.Response]
+}
+
+// Ensure GiteaRetrier implements core.GiteaRetrier interface
+var _ core.GiteaRetrier = (*GiteaRetrier)(nil)
+
+// IsRetryable determines if an error/response is retryable for Gitea responses
+func (g *GiteaRetrier) IsRetryable(resp *gsdk.Response, err error) bool {
 	// Check if operation succeeded (2xx status code and no error)
 	if err == nil && resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return false // Success - no need to retry
@@ -122,4 +151,11 @@ func (r *DefaultRetrier) IsRetryable(resp *gsdk.Response, err error) bool {
 	}
 
 	return false
+}
+
+// NewGiteaRetrier creates a new GiteaRetrier with the given configuration
+func NewGiteaRetrier(config *RetryConfig) *GiteaRetrier {
+	return &GiteaRetrier{
+		DefaultRetrier: NewDefaultRetrier[*gsdk.Response](config),
+	}
 }

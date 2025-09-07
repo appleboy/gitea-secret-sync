@@ -4,13 +4,16 @@ import (
 	gsdk "code.gitea.io/sdk/gitea"
 )
 
-// Retrier defines the interface for retry mechanisms
-type Retrier interface {
-	// DoWithRetry executes an operation that returns Response with retry logic
-	DoWithRetry(operation func() (*gsdk.Response, error)) (*gsdk.Response, error)
+// Retrier defines the interface for retry mechanisms using generics
+type Retrier[T any] interface {
+	// DoWithRetry executes an operation that returns T with retry logic
+	DoWithRetry(operation func() (T, error)) (T, error)
 	// IsRetryable determines if an error/response combination is retryable
-	IsRetryable(resp *gsdk.Response, err error) bool
+	IsRetryable(resp T, err error) bool
 }
+
+// GiteaRetrier is a type alias for Retrier with gsdk.Response for backward compatibility
+type GiteaRetrier = Retrier[*gsdk.Response]
 
 // GiteaClient defines the interface for Gitea operations
 type GiteaClient interface {

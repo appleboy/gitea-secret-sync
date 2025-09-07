@@ -23,7 +23,7 @@ type gitea struct {
 	config  *config
 	client  *gsdk.Client
 	logger  *slog.Logger
-	retrier core.Retrier
+	retrier core.GiteaRetrier
 }
 
 // Ensure gitea implements core.GiteaClient interface
@@ -67,7 +67,7 @@ func WithTimeout(timeout time.Duration) GiteaOption {
 }
 
 // WithRetrier sets the retry mechanism for the gitea client.
-func WithRetrier(retrier core.Retrier) GiteaOption {
+func WithRetrier(retrier core.GiteaRetrier) GiteaOption {
 	return func(g *gitea) {
 		g.retrier = retrier
 	}
@@ -154,7 +154,7 @@ func NewGitea(
 
 	// Initialize default retrier if not provided
 	if g.retrier == nil {
-		g.retrier = retry.NewDefaultRetrier(&retry.RetryConfig{
+		g.retrier = retry.NewGiteaRetrier(&retry.RetryConfig{
 			MaxRetries: g.config.RetryCount,
 			Logger:     g.logger,
 		})

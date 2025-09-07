@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"sync-secrets/core"
+
 	gsdk "code.gitea.io/sdk/gitea"
 	"github.com/joho/godotenv"
 )
@@ -76,7 +78,7 @@ func validateConfiguration(giteaServer, giteaToken string, secrets map[string]st
 }
 
 // processOrgs processes organization secrets
-func processOrgs(g *gitea, orgs string, secrets map[string]string, description string, dryRun bool) {
+func processOrgs(g core.GiteaClient, orgs string, secrets map[string]string, description string, dryRun bool) {
 	orgsList := splitByCommaOrNewline(orgs)
 	for _, org := range orgsList {
 		org = strings.TrimSpace(org)
@@ -88,7 +90,7 @@ func processOrgs(g *gitea, orgs string, secrets map[string]string, description s
 				slog.Info("update org secrets", "org", org, "secret", k)
 				continue
 			}
-			_, err := g.client.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
+			_, err := g.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
 				Name:        k,
 				Data:        v,
 				Description: description,
@@ -108,7 +110,7 @@ func processOrgs(g *gitea, orgs string, secrets map[string]string, description s
 }
 
 // processRepos processes repository secrets
-func processRepos(g *gitea, repos string, secrets map[string]string, description string, dryRun bool) {
+func processRepos(g core.GiteaClient, repos string, secrets map[string]string, description string, dryRun bool) {
 	reposList := splitByCommaOrNewline(repos)
 	for _, repo := range reposList {
 		repo = strings.TrimSpace(repo)
@@ -127,7 +129,7 @@ func processRepos(g *gitea, repos string, secrets map[string]string, description
 				slog.Info("update repo secrets", "repo", repo, "secret", k)
 				continue
 			}
-			_, err := g.client.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
+			_, err := g.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
 				Name:        k,
 				Data:        v,
 				Description: description,
@@ -243,6 +245,12 @@ func run() error {
 	)
 	if err != nil {
 		return logError("failed to init gitea client", "error", err)
+	}
+
+	// verify connection to Gitea server before proceeding
+	slog.Info("verifying connection to gitea server...")
+	if err := g.Ping(); err != nil {
+		return logError("failed to connect to gitea server", "error", err)
 	}
 
 	// update gitea org secrets

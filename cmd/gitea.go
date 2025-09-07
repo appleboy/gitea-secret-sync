@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -13,9 +12,10 @@ import (
 	"time"
 
 	gsdk "code.gitea.io/sdk/gitea"
+	"sync-secrets/core"
 )
 
-// gitea is a struct that holds the gitea client.
+// gitea is a struct that holds the gitea client and implements core.GiteaClient interface.
 type gitea struct {
 	ctx        context.Context
 	server     string
@@ -25,6 +25,9 @@ type gitea struct {
 	client     *gsdk.Client
 	logger     *slog.Logger
 }
+
+// Ensure gitea implements core.GiteaClient interface
+var _ core.GiteaClient = (*gitea)(nil)
 
 // GiteaOption is a function type for configuring gitea client options.
 type GiteaOption func(*gitea)
@@ -92,7 +95,7 @@ func (g *gitea) createHTTPClient() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
-			Proxy:          http.ProxyFromEnvironment,
+			Proxy:           http.ProxyFromEnvironment,
 		},
 		Timeout: timeout,
 	}
@@ -130,12 +133,12 @@ func NewGitea(
 	server string,
 	token string,
 	opts ...GiteaOption,
-) (*gitea, error) {
+) (core.GiteaClient, error) {
 	g := &gitea{
 		ctx:     ctx,
 		server:  server,
 		token:   token,
-		logger:  slog.Default(), // default logger
+		logger:  slog.Default(),   // default logger
 		timeout: 30 * time.Second, // default timeout
 	}
 
@@ -150,4 +153,43 @@ func NewGitea(
 	}
 
 	return g, nil
+}
+
+// CreateOrgActionSecret creates or updates an organization action secret
+func (g *gitea) CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (interface{}, error) {
+	if g.client == nil {
+		return nil, errors.New("gitea client not initialized")
+	}
+	return g.client.CreateOrgActionSecret(org, opt)
+}
+
+// CreateRepoActionSecret creates or updates a repository action secret
+func (g *gitea) CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (interface{}, error) {
+	if g.client == nil {
+		return nil, errors.New("gitea client not initialized")
+	}
+	return g.client.CreateRepoActionSecret(owner, repo, opt)
+}
+
+// Ping verifies the connection to Gitea server and token validity
+func (g *gitea) Ping() error {
+	if g.client == nil {
+		return errors.New("gitea client not initialized")
+	}
+
+	// Use a lightweight endpoint to test connectivity
+	_, _, err := g.client.GetMyUserInfo()
+	if err != nil {
+		return fmt.Errorf("failed to ping gitea server: %w", err)
+	}
+
+	g.logger.Info("successfully connected to gitea server", "server", g.server)
+	return nil
+}
+
+// Close performs cleanup operations
+func (g *gitea) Close() error {
+	// Add any cleanup logic here if needed
+	g.logger.Debug("closing gitea client")
+	return nil
 }

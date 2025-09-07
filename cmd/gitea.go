@@ -11,16 +11,19 @@ import (
 	"strings"
 	"time"
 
-	gsdk "code.gitea.io/sdk/gitea"
 	"sync-secrets/core"
+	"sync-secrets/retry"
+
+	gsdk "code.gitea.io/sdk/gitea"
 )
 
 // gitea is a struct that holds the gitea client and implements core.GiteaClient interface.
 type gitea struct {
-	ctx    context.Context
-	config *config
-	client *gsdk.Client
-	logger *slog.Logger
+	ctx     context.Context
+	config  *config
+	client  *gsdk.Client
+	logger  *slog.Logger
+	retrier core.Retrier
 }
 
 // Ensure gitea implements core.GiteaClient interface
@@ -60,6 +63,13 @@ func WithTimeout(timeout time.Duration) GiteaOption {
 			g.config = &config{}
 		}
 		g.config.Timeout = timeout
+	}
+}
+
+// WithRetrier sets the retry mechanism for the gitea client.
+func WithRetrier(retrier core.Retrier) GiteaOption {
+	return func(g *gitea) {
+		g.retrier = retrier
 	}
 }
 
@@ -142,6 +152,14 @@ func NewGitea(
 		opt(g)
 	}
 
+	// Initialize default retrier if not provided
+	if g.retrier == nil {
+		g.retrier = retry.NewDefaultRetrier(&retry.RetryConfig{
+			MaxRetries: g.config.RetryCount,
+			Logger:     g.logger,
+		})
+	}
+
 	err := g.init()
 	if err != nil {
 		return nil, err
@@ -151,19 +169,25 @@ func NewGitea(
 }
 
 // CreateOrgActionSecret creates or updates an organization action secret
-func (g *gitea) CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (interface{}, error) {
+func (g *gitea) CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
-	return g.client.CreateOrgActionSecret(org, opt)
+
+	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
+		return g.client.CreateOrgActionSecret(org, opt)
+	})
 }
 
 // CreateRepoActionSecret creates or updates a repository action secret
-func (g *gitea) CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (interface{}, error) {
+func (g *gitea) CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
-	return g.client.CreateRepoActionSecret(owner, repo, opt)
+
+	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
+		return g.client.CreateRepoActionSecret(owner, repo, opt)
+	})
 }
 
 // Ping verifies the connection to Gitea server and token validity
@@ -172,8 +196,10 @@ func (g *gitea) Ping() error {
 		return errors.New("gitea client not initialized")
 	}
 
-	// Use a lightweight endpoint to test connectivity
-	_, _, err := g.client.GetMyUserInfo()
+	_, err := g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
+		_, resp, err := g.client.GetMyUserInfo()
+		return resp, err
+	})
 	if err != nil {
 		return fmt.Errorf("failed to ping gitea server: %w", err)
 	}

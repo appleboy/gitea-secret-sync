@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	gsdk "code.gitea.io/sdk/gitea"
 	"github.com/joho/godotenv"
@@ -19,6 +20,7 @@ var (
 	Commit      string
 	showVersion bool
 	debugMode   bool
+	timeout     time.Duration
 )
 
 // setupGracefulShutdown sets up graceful shutdown handling with proper cleanup
@@ -156,6 +158,7 @@ func run() error {
 	flag.StringVar(&envfile, "env-file", ".env", "Read in a file of environment variables")
 	flag.BoolVar(&showVersion, "version", false, "Show version")
 	flag.BoolVar(&debugMode, "debug", false, "Enable debug mode")
+	flag.DurationVar(&timeout, "timeout", 30*time.Second, "HTTP client timeout (e.g., 30s, 1m, 2m30s)")
 	flag.Parse()
 
 	if showVersion {
@@ -203,6 +206,7 @@ func run() error {
 		slog.Debug("flag.env-file", "value", envfile)
 		slog.Debug("flag.version", "value", showVersion)
 		slog.Debug("flag.debug", "value", debugMode)
+		slog.Debug("flag.timeout", "value", timeout)
 		slog.Debug("--- Environment Variables ---")
 		slog.Debug("gitea_server", "value", giteaServer)
 		slog.Debug("gitea_token", "value", "***HIDDEN***")
@@ -233,8 +237,9 @@ func run() error {
 		ctx,
 		giteaServer,
 		giteaToken,
-		toBool(giteaSkip),
-		logger,
+		WithSkipVerify(toBool(giteaSkip)),
+		WithLogger(logger),
+		WithTimeout(timeout),
 	)
 	if err != nil {
 		return logError("failed to init gitea client", "error", err)

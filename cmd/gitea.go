@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -9,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	gsdk "code.gitea.io/sdk/gitea"
 )
@@ -19,8 +21,33 @@ type gitea struct {
 	server     string
 	token      string
 	skipVerify bool
+	timeout    time.Duration
 	client     *gsdk.Client
 	logger     *slog.Logger
+}
+
+// GiteaOption is a function type for configuring gitea client options.
+type GiteaOption func(*gitea)
+
+// WithSkipVerify sets whether to skip TLS certificate verification.
+func WithSkipVerify(skip bool) GiteaOption {
+	return func(g *gitea) {
+		g.skipVerify = skip
+	}
+}
+
+// WithLogger sets the logger for the gitea client.
+func WithLogger(logger *slog.Logger) GiteaOption {
+	return func(g *gitea) {
+		g.logger = logger
+	}
+}
+
+// WithTimeout sets the HTTP client timeout.
+func WithTimeout(timeout time.Duration) GiteaOption {
+	return func(g *gitea) {
+		g.timeout = timeout
+	}
 }
 
 // validateInputs performs comprehensive validation of input parameters.
@@ -56,11 +83,18 @@ func (g *gitea) createHTTPClient() *http.Client {
 		tlsConfig.InsecureSkipVerify = true
 	}
 
+	// Set default timeout if not configured
+	timeout := g.timeout
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
+
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
-			Proxy:           http.ProxyFromEnvironment,
+			Proxy:          http.ProxyFromEnvironment,
 		},
+		Timeout: timeout,
 	}
 }
 
@@ -90,20 +124,24 @@ func (g *gitea) init() error {
 	return nil
 }
 
-// NewGitea creates a new instance of the gitea struct.
+// NewGitea creates a new instance of the gitea struct with options pattern.
 func NewGitea(
 	ctx context.Context,
 	server string,
 	token string,
-	skipVerify bool,
-	logger *slog.Logger,
+	opts ...GiteaOption,
 ) (*gitea, error) {
 	g := &gitea{
-		ctx:        ctx,
-		server:     server,
-		token:      token,
-		skipVerify: skipVerify,
-		logger:     logger,
+		ctx:     ctx,
+		server:  server,
+		token:   token,
+		logger:  slog.Default(), // default logger
+		timeout: 30 * time.Second, // default timeout
+	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(g)
 	}
 
 	err := g.init()

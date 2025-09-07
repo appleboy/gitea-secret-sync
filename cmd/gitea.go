@@ -17,13 +17,10 @@ import (
 
 // gitea is a struct that holds the gitea client and implements core.GiteaClient interface.
 type gitea struct {
-	ctx        context.Context
-	server     string
-	token      string
-	skipVerify bool
-	timeout    time.Duration
-	client     *gsdk.Client
-	logger     *slog.Logger
+	ctx    context.Context
+	config *config
+	client *gsdk.Client
+	logger *slog.Logger
 }
 
 // Ensure gitea implements core.GiteaClient interface
@@ -32,10 +29,10 @@ var _ core.GiteaClient = (*gitea)(nil)
 // GiteaOption is a function type for configuring gitea client options.
 type GiteaOption func(*gitea)
 
-// WithSkipVerify sets whether to skip TLS certificate verification.
-func WithSkipVerify(skip bool) GiteaOption {
+// WithConfig sets the configuration for the gitea client.
+func WithConfig(cfg *config) GiteaOption {
 	return func(g *gitea) {
-		g.skipVerify = skip
+		g.config = cfg
 	}
 }
 
@@ -46,26 +43,24 @@ func WithLogger(logger *slog.Logger) GiteaOption {
 	}
 }
 
-// WithTimeout sets the HTTP client timeout.
-func WithTimeout(timeout time.Duration) GiteaOption {
+// WithSkipVerify sets whether to skip TLS certificate verification.
+func WithSkipVerify(skip bool) GiteaOption {
 	return func(g *gitea) {
-		g.timeout = timeout
+		if g.config == nil {
+			g.config = &config{}
+		}
+		g.config.SkipVerify = skip
 	}
 }
 
-// validateInputs performs comprehensive validation of input parameters.
-func (g *gitea) validateInputs() error {
-	if g.server == "" {
-		return errors.New("gitea server URL is required")
+// WithTimeout sets the HTTP client timeout.
+func WithTimeout(timeout time.Duration) GiteaOption {
+	return func(g *gitea) {
+		if g.config == nil {
+			g.config = &config{}
+		}
+		g.config.Timeout = timeout
 	}
-	if g.token == "" {
-		return errors.New("gitea token is required")
-	}
-	// Gitea tokens are typically 40 characters (hex format)
-	if len(g.token) < 40 {
-		return errors.New("gitea token appears invalid (expected 40 characters)")
-	}
-	return nil
 }
 
 // createHTTPClient creates and configures the HTTP client with proper TLS settings.
@@ -81,15 +76,9 @@ func (g *gitea) createHTTPClient() *http.Client {
 	}
 
 	// Only skip verification if explicitly needed and log warning
-	if g.skipVerify {
+	if g.config.SkipVerify {
 		g.logger.Warn("TLS certificate verification disabled - this reduces security")
 		tlsConfig.InsecureSkipVerify = true
-	}
-
-	// Set default timeout if not configured
-	timeout := g.timeout
-	if timeout == 0 {
-		timeout = 30 * time.Second
 	}
 
 	return &http.Client{
@@ -97,28 +86,28 @@ func (g *gitea) createHTTPClient() *http.Client {
 			TLSClientConfig: tlsConfig,
 			Proxy:           http.ProxyFromEnvironment,
 		},
-		Timeout: timeout,
+		Timeout: g.config.Timeout,
 	}
 }
 
 // init initializes the gitea client.
 func (g *gitea) init() error {
-	// Use extracted validation method
-	if err := g.validateInputs(); err != nil {
+	// Validate configuration
+	if err := g.config.Validate(); err != nil {
 		return err
 	}
 
-	g.server = strings.TrimRight(g.server, "/")
+	g.config.Server = strings.TrimRight(g.config.Server, "/")
 
 	opts := []gsdk.ClientOption{
-		gsdk.SetToken(g.token),
+		gsdk.SetToken(g.config.Token),
 	}
 
 	// Use extracted HTTP client creation method
 	httpClient := g.createHTTPClient()
 	opts = append(opts, gsdk.SetHTTPClient(httpClient))
 
-	client, err := gsdk.NewClient(g.server, opts...)
+	client, err := gsdk.NewClient(g.config.Server, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create gitea client: %w", err)
 	}
@@ -134,12 +123,18 @@ func NewGitea(
 	token string,
 	opts ...GiteaOption,
 ) (core.GiteaClient, error) {
+	// Create default config
+	cfg := &config{
+		Server:     server,
+		Token:      token,
+		Timeout:    30 * time.Second, // default timeout
+		RetryCount: 3,                // default retry count
+	}
+
 	g := &gitea{
-		ctx:     ctx,
-		server:  server,
-		token:   token,
-		logger:  slog.Default(),   // default logger
-		timeout: 30 * time.Second, // default timeout
+		ctx:    ctx,
+		config: cfg,
+		logger: slog.Default(), // default logger
 	}
 
 	// Apply options
@@ -183,7 +178,7 @@ func (g *gitea) Ping() error {
 		return fmt.Errorf("failed to ping gitea server: %w", err)
 	}
 
-	g.logger.Info("successfully connected to gitea server", "server", g.server)
+	g.logger.Info("successfully connected to gitea server", "server", g.config.Server)
 	return nil
 }
 

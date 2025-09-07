@@ -95,7 +95,7 @@ func (r *DefaultRetrier[T]) IsRetryable(resp T, err error) bool {
 
 // GiteaRetrier is a concrete implementation for Gitea responses
 type GiteaRetrier struct {
-	*DefaultRetrier[*gsdk.Response]
+	config *RetryConfig
 }
 
 // Ensure GiteaRetrier implements core.GiteaRetrier interface
@@ -153,9 +153,43 @@ func (g *GiteaRetrier) IsRetryable(resp *gsdk.Response, err error) bool {
 	return false
 }
 
+// DoWithRetry executes an operation that returns *gsdk.Response with retry logic
+func (g *GiteaRetrier) DoWithRetry(operation func() (*gsdk.Response, error)) (*gsdk.Response, error) {
+	var lastResp *gsdk.Response
+
+	for i := 0; i < g.config.MaxRetries; i++ {
+		resp, err := operation()
+		lastResp = resp
+
+		// Check if error/response is retryable
+		if !g.IsRetryable(resp, err) {
+			return resp, err
+		}
+
+		if i < g.config.MaxRetries-1 {
+			backoff := time.Duration(i+1) * time.Second
+			g.config.Logger.Warn("operation failed, retrying",
+				"attempt", i+1,
+				"backoff", backoff,
+				"error", err)
+			time.Sleep(backoff)
+		}
+	}
+	return lastResp, fmt.Errorf("operation failed after %d retries", g.config.MaxRetries)
+}
+
 // NewGiteaRetrier creates a new GiteaRetrier with the given configuration
 func NewGiteaRetrier(config *RetryConfig) *GiteaRetrier {
+	if config == nil {
+		config = &RetryConfig{
+			MaxRetries: 3,
+			Logger:     slog.Default(),
+		}
+	}
+	if config.Logger == nil {
+		config.Logger = slog.Default()
+	}
 	return &GiteaRetrier{
-		DefaultRetrier: NewDefaultRetrier[*gsdk.Response](config),
+		config: config,
 	}
 }

@@ -66,10 +66,14 @@ func TestGetGlobalValue(t *testing.T) {
 	// Cleanup function to restore environment
 	cleanup := func() {
 		for _, key := range testKeys {
-			os.Unsetenv(key)
+			if err := os.Unsetenv(key); err != nil {
+				panic("failed to unset env key " + key + ": " + err.Error())
+			}
 		}
 		for key, val := range originalEnv {
-			os.Setenv(key, val)
+			if err := os.Setenv(key, val); err != nil {
+				panic("failed to reset env key " + key + ": " + err.Error())
+			}
 		}
 	}
 	defer cleanup()
@@ -181,10 +185,14 @@ func TestGetDataFromEnv(t *testing.T) {
 	// Cleanup function to restore environment
 	cleanup := func() {
 		for _, key := range testKeys {
-			os.Unsetenv(key)
+			if err := os.Unsetenv(key); err != nil {
+				panic("failed to unset env key " + key + ": " + err.Error())
+			}
 		}
 		for key, val := range originalEnv {
-			os.Setenv(key, val)
+			if err := os.Setenv(key, val); err != nil {
+				panic("failed to reset env key " + key + ": " + err.Error())
+			}
 		}
 	}
 	defer cleanup()
@@ -382,8 +390,14 @@ func BenchmarkToBool(b *testing.B) {
 
 func BenchmarkGetGlobalValue(b *testing.B) {
 	// Set up a test environment variable
-	os.Setenv("BENCH_TEST_KEY", "test_value")
-	defer os.Unsetenv("BENCH_TEST_KEY")
+	if err := os.Setenv("BENCH_TEST_KEY", "test_value"); err != nil {
+		b.Fatalf("failed to set env: %v", err)
+	}
+	defer func() {
+		if err := os.Unsetenv("BENCH_TEST_KEY"); err != nil {
+			b.Fatalf("failed to unset env: %v", err)
+		}
+	}()
 
 	for i := 0; i < b.N; i++ {
 		getGlobalValue("bench_test_key")

@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "^1"
       - name: Checkout repository
@@ -21,7 +21,7 @@ jobs:
           version: latest
           args: --verbose
 
-      - uses: hadolint/hadolint-action@v3.1.0
+      - uses: hadolint/hadolint-action@v3.3.0
         name: hadolint for Dockerfile
         with:
           dockerfile: docker/Dockerfile
@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        go: [1.23, 1.24]
+        go: [1.23, 1.24, 1.25]
         include:
           - os: ubuntu-latest
             go-build: ~/.cache/go-build
@@ -41,7 +41,7 @@ jobs:
       GOPROXY: https://proxy.golang.org
     steps:
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go }}
 
@@ -75,7 +75,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.32.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: "fs"
           ignore-unfixed: true

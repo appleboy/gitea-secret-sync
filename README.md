@@ -4,6 +4,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/appleboy/gitea-secret-sync)](https://goreportcard.com/report/github.com/appleboy/gitea-secret-sync)
 [![Lint and Testing](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml)
+[![Trivy Security Scan](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml)
 
 A powerful CLI tool for synchronizing secrets across Gitea organizations and repositories. This tool enables batch updates of action secrets to multiple Gitea organizations and repositories simultaneously, with support for dry-run mode and SSL verification options.
 

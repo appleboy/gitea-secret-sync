@@ -4,6 +4,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/appleboy/gitea-secret-sync)](https://goreportcard.com/report/github.com/appleboy/gitea-secret-sync)
 [![Lint and Testing](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml)
+[![Trivy Security Scan](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml)
 
 一个功能强大的 CLI 工具，用于在 Gitea 组织和仓库之间同步密钥。该工具可以批量更新多个 Gitea 组织和仓库的动作密钥，并支持预览模式和 SSL 验证选项。
 

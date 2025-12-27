@@ -52,20 +52,20 @@ The tool supports two formats for environment variables:
 
 #### Required Configuration
 
-| Variable       | Description                                  | Example                     |
-| -------------- | -------------------------------------------- | --------------------------- |
-| `GITEA_SERVER` | Gitea server URL                             | `https://gitea.example.com` |
-| `GITEA_TOKEN`  | Gitea access token                           | `your_gitea_token_here`     |
+| Variable       | Description                                             | Example                     |
+| -------------- | ------------------------------------------------------- | --------------------------- |
+| `GITEA_SERVER` | Gitea server URL                                        | `https://gitea.example.com` |
+| `GITEA_TOKEN`  | Gitea access token                                      | `your_gitea_token_here`     |
 | `SECRETS`      | Comma or newline-separated list of secret names to sync | `SECRET1,SECRET2,SECRET3`   |
 
 #### Optional Configuration
 
-| Variable            | Description                                     | Default | Example                 |
-| ------------------- | ----------------------------------------------- | ------- | ----------------------- |
-| `GITEA_SKIP_VERIFY` | Skip SSL certificate verification               | `false` | `true`                  |
+| Variable            | Description                                                | Default | Example                 |
+| ------------------- | ---------------------------------------------------------- | ------- | ----------------------- |
+| `GITEA_SKIP_VERIFY` | Skip SSL certificate verification                          | `false` | `true`                  |
 | `ORGS`              | Comma or newline-separated list of organizations to update | -       | `org1,org2,org3`        |
 | `REPOS`             | Comma or newline-separated list of repositories to update  | -       | `org1/repo1,org2/repo2` |
-| `DRY_RUN`           | Enable dry-run mode (preview only)              | `false` | `true`                  |
+| `DRY_RUN`           | Enable dry-run mode (preview only)                         | `false` | `true`                  |
 
 #### Secret Values
 

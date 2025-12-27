@@ -52,20 +52,20 @@ gitea-secret-sync [選項]
 
 #### 必需配置
 
-| 變數           | 描述                               | 範例                        |
-| -------------- | ---------------------------------- | --------------------------- |
-| `GITEA_SERVER` | Gitea 伺服器 URL                   | `https://gitea.example.com` |
-| `GITEA_TOKEN`  | Gitea 存取權杖                     | `your_gitea_token_here`     |
+| 變數           | 描述                                   | 範例                        |
+| -------------- | -------------------------------------- | --------------------------- |
+| `GITEA_SERVER` | Gitea 伺服器 URL                       | `https://gitea.example.com` |
+| `GITEA_TOKEN`  | Gitea 存取權杖                         | `your_gitea_token_here`     |
 | `SECRETS`      | 要同步的機密名稱清單（逗號或換行分隔） | `SECRET1,SECRET2,SECRET3`   |
 
 #### 可選配置
 
-| 變數                | 描述                           | 預設值  | 範例                    |
-| ------------------- | ------------------------------ | ------- | ----------------------- |
-| `GITEA_SKIP_VERIFY` | 跳過 SSL 憑證驗證              | `false` | `true`                  |
+| 變數                | 描述                               | 預設值  | 範例                    |
+| ------------------- | ---------------------------------- | ------- | ----------------------- |
+| `GITEA_SKIP_VERIFY` | 跳過 SSL 憑證驗證                  | `false` | `true`                  |
 | `ORGS`              | 要更新的組織清單（逗號或換行分隔） | -       | `org1,org2,org3`        |
 | `REPOS`             | 要更新的倉庫清單（逗號或換行分隔） | -       | `org1/repo1,org2/repo2` |
-| `DRY_RUN`           | 啟用預覽模式（僅預覽）         | `false` | `true`                  |
+| `DRY_RUN`           | 啟用預覽模式（僅預覽）             | `false` | `true`                  |
 
 #### 機密值
 

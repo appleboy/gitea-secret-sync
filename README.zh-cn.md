@@ -52,20 +52,20 @@ gitea-secret-sync [选项]
 
 #### 必需配置
 
-| 变量           | 描述                               | 示例                        |
-| -------------- | ---------------------------------- | --------------------------- |
-| `GITEA_SERVER` | Gitea 服务器 URL                   | `https://gitea.example.com` |
-| `GITEA_TOKEN`  | Gitea 访问令牌                     | `your_gitea_token_here`     |
+| 变量           | 描述                                   | 示例                        |
+| -------------- | -------------------------------------- | --------------------------- |
+| `GITEA_SERVER` | Gitea 服务器 URL                       | `https://gitea.example.com` |
+| `GITEA_TOKEN`  | Gitea 访问令牌                         | `your_gitea_token_here`     |
 | `SECRETS`      | 要同步的密钥名称列表（逗号或换行分隔） | `SECRET1,SECRET2,SECRET3`   |
 
 #### 可选配置
 
-| 变量                | 描述                           | 默认值  | 示例                    |
-| ------------------- | ------------------------------ | ------- | ----------------------- |
-| `GITEA_SKIP_VERIFY` | 跳过 SSL 证书验证              | `false` | `true`                  |
+| 变量                | 描述                               | 默认值  | 示例                    |
+| ------------------- | ---------------------------------- | ------- | ----------------------- |
+| `GITEA_SKIP_VERIFY` | 跳过 SSL 证书验证                  | `false` | `true`                  |
 | `ORGS`              | 要更新的组织列表（逗号或换行分隔） | -       | `org1,org2,org3`        |
 | `REPOS`             | 要更新的仓库列表（逗号或换行分隔） | -       | `org1/repo1,org2/repo2` |
-| `DRY_RUN`           | 启用预览模式（仅预览）         | `false` | `true`                  |
+| `DRY_RUN`           | 启用预览模式（仅预览）             | `false` | `true`                  |
 
 #### 密钥值
 

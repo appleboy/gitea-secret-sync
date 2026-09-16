@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,7 @@ import (
 
 	"sync-secrets/retry"
 
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,6 +61,7 @@ func TestGiteaCreateActionSecretAllowsLongName(t *testing.T) {
 			sdkClient, err := gsdk.NewClient(server.URL, gsdk.SetGiteaVersion(""))
 			require.NoError(t, err)
 			client := &gitea{
+				ctx:     context.Background(),
 				client:  sdkClient,
 				retrier: retry.NewGiteaRetrier(nil),
 			}

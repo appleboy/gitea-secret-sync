@@ -9,7 +9,7 @@ import (
 
 	"sync-secrets/core"
 
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 )
 
 // RetryConfig holds configuration for retry behavior

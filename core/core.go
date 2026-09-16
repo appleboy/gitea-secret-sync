@@ -1,7 +1,7 @@
 package core
 
 import (
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 )
 
 // Retrier defines the interface for retry mechanisms using generics

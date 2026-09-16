@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

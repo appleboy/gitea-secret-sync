@@ -13,7 +13,7 @@ import (
 
 	"sync-secrets/core"
 
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 	"github.com/joho/godotenv"
 )
 

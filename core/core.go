@@ -1,7 +1,7 @@
 package core
 
 import (
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 )
 
 // Retrier defines the interface for retry mechanisms using generics
@@ -18,10 +18,10 @@ type GiteaRetrier = Retrier[*gsdk.Response]
 // GiteaClient defines the interface for Gitea operations
 type GiteaClient interface {
 	// Organization secrets operations
-	CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (*gsdk.Response, error)
+	CreateOrgActionSecret(org, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error)
 
 	// Repository secrets operations
-	CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (*gsdk.Response, error)
+	CreateRepoActionSecret(owner, repo, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error)
 
 	// Health check
 	Ping() error

@@ -14,7 +14,7 @@ import (
 	"sync-secrets/core"
 	"sync-secrets/retry"
 
-	gsdk "code.gitea.io/sdk/gitea"
+	gsdk "gitea.dev/sdk"
 )
 
 // gitea is a struct that holds the gitea client and implements core.GiteaClient interface.
@@ -169,24 +169,24 @@ func NewGitea(
 }
 
 // CreateOrgActionSecret creates or updates an organization action secret
-func (g *gitea) CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
+func (g *gitea) CreateOrgActionSecret(org, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
 
 	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
-		return g.client.CreateOrgActionSecret(org, opt)
+		return g.client.Actions.CreateOrgSecret(g.ctx, org, secretName, opt)
 	})
 }
 
 // CreateRepoActionSecret creates or updates a repository action secret
-func (g *gitea) CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
+func (g *gitea) CreateRepoActionSecret(owner, repo, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
 
 	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
-		return g.client.CreateRepoActionSecret(owner, repo, opt)
+		return g.client.Actions.CreateRepoSecret(g.ctx, owner, repo, secretName, opt)
 	})
 }
 
@@ -197,7 +197,7 @@ func (g *gitea) Ping() error {
 	}
 
 	_, err := g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
-		_, resp, err := g.client.GetMyUserInfo()
+		_, resp, err := g.client.Users.GetMyUserInfo(g.ctx)
 		return resp, err
 	})
 	if err != nil {

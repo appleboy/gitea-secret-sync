@@ -2,7 +2,6 @@
 
 [English](README.md) | [繁體中文](README.zh-tw.md) | [简体中文](README.zh-cn.md)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/appleboy/gitea-secret-sync)](https://goreportcard.com/report/github.com/appleboy/gitea-secret-sync)
 [![Lint and Testing](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/testing.yml)
 [![Trivy Security Scan](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml/badge.svg)](https://github.com/appleboy/gitea-secret-sync/actions/workflows/trivy.yml)
 

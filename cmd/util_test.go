@@ -408,13 +408,8 @@ func BenchmarkGetDataFromEnv(b *testing.B) {
 	// Set up test environment variables
 	testKeys := []string{"BENCH_KEY1", "BENCH_KEY2", "BENCH_KEY3"}
 	for _, key := range testKeys {
-		os.Setenv(key, "value_"+key)
+		b.Setenv(key, "value_"+key)
 	}
-	defer func() {
-		for _, key := range testKeys {
-			os.Unsetenv(key)
-		}
-	}()
 
 	keys := []string{"bench_key1", "bench_key2", "bench_key3"}
 

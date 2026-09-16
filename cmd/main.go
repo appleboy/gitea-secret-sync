@@ -90,8 +90,7 @@ func processOrgs(g core.GiteaClient, orgs string, secrets map[string]string, des
 				slog.Info("update org secrets", "org", org, "secret", k)
 				continue
 			}
-			_, err := g.CreateOrgActionSecret(org, gsdk.CreateSecretOption{
-				Name:        k,
+			_, err := g.CreateOrgActionSecret(org, k, gsdk.CreateOrUpdateSecretOption{
 				Data:        v,
 				Description: description,
 			})
@@ -129,8 +128,7 @@ func processRepos(g core.GiteaClient, repos string, secrets map[string]string, d
 				slog.Info("update repo secrets", "repo", repo, "secret", k)
 				continue
 			}
-			_, err := g.CreateRepoActionSecret(val[0], val[1], gsdk.CreateSecretOption{
-				Name:        k,
+			_, err := g.CreateRepoActionSecret(val[0], val[1], k, gsdk.CreateOrUpdateSecretOption{
 				Data:        v,
 				Description: description,
 			})

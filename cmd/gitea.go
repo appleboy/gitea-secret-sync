@@ -169,24 +169,24 @@ func NewGitea(
 }
 
 // CreateOrgActionSecret creates or updates an organization action secret
-func (g *gitea) CreateOrgActionSecret(org string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
+func (g *gitea) CreateOrgActionSecret(org, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
 
 	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
-		return g.client.CreateOrgActionSecret(org, opt)
+		return g.client.CreateOrgActionSecret(org, secretName, opt)
 	})
 }
 
 // CreateRepoActionSecret creates or updates a repository action secret
-func (g *gitea) CreateRepoActionSecret(owner, repo string, opt gsdk.CreateSecretOption) (*gsdk.Response, error) {
+func (g *gitea) CreateRepoActionSecret(owner, repo, secretName string, opt gsdk.CreateOrUpdateSecretOption) (*gsdk.Response, error) {
 	if g.client == nil {
 		return nil, errors.New("gitea client not initialized")
 	}
 
 	return g.retrier.DoWithRetry(func() (*gsdk.Response, error) {
-		return g.client.CreateRepoActionSecret(owner, repo, opt)
+		return g.client.CreateRepoActionSecret(owner, repo, secretName, opt)
 	})
 }
 

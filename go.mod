@@ -3,7 +3,7 @@ module sync-secrets
 go 1.26.0
 
 require (
-	gitea.dev/sdk v1.2.0
+	gitea.dev/sdk v1.3.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.12.1
 )
